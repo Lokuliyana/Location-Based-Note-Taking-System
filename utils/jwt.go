@@ -1,13 +1,17 @@
 package utils
 
 import (
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-var jwtKey = []byte("secret") // Change this to a safe env variable
+// Load the JWT key from an environment variable
+var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 
+// GenerateJWT generates a signed JWT token for a user
 func GenerateJWT(userID uint) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,
@@ -15,4 +19,45 @@ func GenerateJWT(userID uint) (string, error) {
 	})
 
 	return token.SignedString(jwtKey)
+}
+
+// ParseJWT validates and parses the JWT token to extract claims
+func ParseJWT(tokenString string) (*jwt.Token, jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		return nil, nil, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, nil, err
+	}
+
+	return token, claims, nil
+}
+
+// Example handler (for documentation/testing purposes)
+func SomeProtectedHandler(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	// Directly call ParseJWT (no utils.ParseJWT inside utils package)
+	_, _, err := ParseJWT(tokenString)
+	if err != nil {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	// Get the user ID from claims, if needed
+	// For demonstration, we're not using it to avoid "unused variable" error
+	// userID := claims["user_id"]
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Token is valid"))
 }

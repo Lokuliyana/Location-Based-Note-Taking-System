@@ -1,23 +1,22 @@
 package routes
 
 import (
-	"GeoTagger/controllers"
-	"GeoTagger/middlewares"
+	"database/sql"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
+	"GeoTagger/controllers"
 )
 
-func SetupRoutes(r *gin.Engine) {
-	auth := r.Group("/auth")
-	{
-		auth.POST("/register", controllers.Register)
-		auth.POST("/login", controllers.Login)
-	}
+func SetupRoutes(db *sql.DB) *mux.Router {
+	r := mux.NewRouter()
 
-	api := r.Group("/api")
-	api.Use(middlewares.AuthMiddleware())
-	{
-		api.GET("/notes", controllers.GetNotes)    // to implement
-		api.POST("/notes", controllers.CreateNote) // to implement
-	}
+	// Registration route
+	r.HandleFunc("/api/register", controllers.RegisterUser(db)).Methods("POST")
+
+	// Login route
+	r.HandleFunc("/api/login", controllers.Login(db)).Methods("POST")
+
+	// Add more routes here as needed (e.g., for notes, tags, etc.)
+
+	return r
 }
