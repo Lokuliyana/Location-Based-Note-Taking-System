@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type CreateNoteRequest struct {
@@ -123,7 +125,8 @@ type UpdateNoteRequest struct {
 
 func UpdateNote(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		noteID := r.URL.Query().Get("id")
+		vars := mux.Vars(r)
+		noteID := vars["id"]
 		if noteID == "" {
 			http.Error(w, "Note ID is required", http.StatusBadRequest)
 			return
@@ -152,7 +155,8 @@ func UpdateNote(db *sql.DB) http.HandlerFunc {
 
 func DeleteNote(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		noteID := r.URL.Query().Get("id")
+		vars := mux.Vars(r)
+		noteID := vars["id"]
 		if noteID == "" {
 			http.Error(w, "Note ID is required", http.StatusBadRequest)
 			return
