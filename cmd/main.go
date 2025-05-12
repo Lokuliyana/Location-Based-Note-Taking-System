@@ -1,39 +1,51 @@
 package main
 
 import (
-    "log"
     "database/sql"
+    "log"
+    "net/http"
+
+    "github.com/rs/cors"
+    _ "github.com/go-sql-driver/mysql"
+
     "GeoTagger/config"
     "GeoTagger/routes"
-    "net/http"  // Ensure to import net/http package for HTTP server
-    _ "github.com/go-sql-driver/mysql" // MySQL driver
 )
 
 func main() {
     // Load environment variables from .env file
     config.LoadEnv()
 
-    
     dbUser := config.GetEnv("DB_USER")
     dbPassword := config.GetEnv("DB_PASSWORD")
     dbHost := config.GetEnv("DB_HOST")
     dbPort := config.GetEnv("DB_PORT")
     dbName := config.GetEnv("DB_NAME")
 
-    // Construct the Data Source Name (DSN) for connecting to the MySQL database
+    // Construct the DSN (Data Source Name)
     dsn := dbUser + ":" + dbPassword + "@tcp(" + dbHost + ":" + dbPort + ")/" + dbName
 
-    // Open a connection to the database
+    // Open the database connection
     db, err := sql.Open("mysql", dsn)
     if err != nil {
         log.Fatalf("Error connecting to the database: %v", err)
     }
-    defer db.Close() // Ensure to close the DB connection when the function returns
+    defer db.Close()
 
-    // Set up the routes for the application
-    r := routes.SetupRoutes(db)
+    // Set up routes with database
+    router := routes.SetupRoutes(db)
 
-    // Start the HTTP server on port 5000
+    // Set up CORS middleware
+    c := cors.New(cors.Options{
+        AllowedOrigins:   []string{"http://localhost:5173"},
+        AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+        AllowedHeaders:   []string{"Content-Type", "Authorization"},
+        AllowCredentials: true,
+    })
+
+    // Apply CORS to the router
+    handler := c.Handler(router)
+
     log.Println("Server started on :5000")
-    log.Fatal(http.ListenAndServe(":5000", r))  // Start the server and handle errors
+    log.Fatal(http.ListenAndServe(":5000", handler))
 }

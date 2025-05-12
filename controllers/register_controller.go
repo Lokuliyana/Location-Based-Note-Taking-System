@@ -12,6 +12,7 @@ import (
 )
 
 type RegisterRequest struct {
+	Name     string `json:"name"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -36,8 +37,8 @@ func RegisterUser(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		query := `INSERT INTO users (username, email, password_hash, created_at) VALUES (?, ?, ?, ?)`
-		result, err := db.Exec(query, req.Username, req.Email, hashedPassword, time.Now())
+		query := `INSERT INTO users (name, username, email, password_hash, created_at) VALUES (?, ?, ?, ?, ?)`
+		result, err := db.Exec(query, req.Name, req.Username, req.Email, hashedPassword, time.Now())
 		if err != nil {
 			http.Error(w, "Error creating user: "+err.Error(), http.StatusInternalServerError)
 			return

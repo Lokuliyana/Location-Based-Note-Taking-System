@@ -1,12 +1,14 @@
 package utils
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
+var jwtSecret = []byte("9f2d1a21a7b4e01c872d234d3ffba18d9ae4d1a5a3f1c59e4c1470f97f4fd22a") 
 
 // Load the JWT key from an environment variable
 var jwtKey = []byte(os.Getenv("JWT_SECRET"))
@@ -60,4 +62,16 @@ func SomeProtectedHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Token is valid"))
+}
+
+// VerifyJWT verifies and parses a JWT token string
+func VerifyJWT(tokenString string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Validate the algorithm
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return jwtSecret, nil
+	})
+	return token, err
 }
